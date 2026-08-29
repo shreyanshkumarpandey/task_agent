@@ -19,4 +19,4 @@ def run_agent(user_request: str):
 
 
 if __name__ == "__main__":
-    run_agent("Remind me to buy milk at 6pm")
+    run_agent("What reminders do I have?")
