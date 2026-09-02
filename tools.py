@@ -17,4 +17,16 @@ def list_reminders() -> str:
             content = f.read()
         return content if content else "No reminders yet."
     except FileNotFoundError:
-        return "No reminders yet."
+        return "No reminders yet." 
+
+def read_file(path: str) -> str:
+    try:
+        with open(path, "r") as f:
+            content = f.read()
+        return content if content else "The file is empty."
+    except FileNotFoundError:
+        return f"No file found at '{path}'."
+    except Exception as e:
+        return f"Error reading file: {str(e)}"
+
+    

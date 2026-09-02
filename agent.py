@@ -3,12 +3,11 @@ from google import genai
 from google.genai import types
 import os
 
-from tools import create_reminder, list_reminders
+from tools import create_reminder, list_reminders , read_file
 
 load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-tools = [create_reminder, list_reminders]
-
+tools = [create_reminder, list_reminders , read_file]
 config = types.GenerateContentConfig(
     tools=tools,
 )
@@ -50,6 +49,7 @@ def run_agent_manual(user_request: str):
     available_functions = {
         "create_reminder": create_reminder,
         "list_reminders": list_reminders,
+        "read_file": read_file,
     }
     function_to_call = available_functions[function_call.name]
     result = function_to_call(**function_call.args)
@@ -66,4 +66,4 @@ def run_agent_manual(user_request: str):
 
 
 if __name__ == "__main__":
-    run_agent_manual("Remind me to buy milk at 6pm")
+    run_agent_manual("What does my notes.txt file say?")
