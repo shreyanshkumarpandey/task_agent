@@ -3,71 +3,62 @@ from google import genai
 from google.genai import types
 import os
 
-from tools import create_reminder, list_reminders , read_file
+from tools import create_reminder, list_reminders, read_file
 
 load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-tools = [create_reminder, list_reminders , read_file]
-config = types.GenerateContentConfig(
-    tools=tools,
-)
 
+tools = [create_reminder, list_reminders, read_file]
 
-def inspect_raw_call(user_request: str):
-    # Disable automatic function execution so we can see Gemini's raw decision
-    manual_config = types.GenerateContentConfig(
-        tools=tools,
-        automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
-    )
+available_functions = {
+    "create_reminder": create_reminder,
+    "list_reminders": list_reminders,
+    "read_file": read_file,
+}
 
-    chat = client.chats.create(model="gemini-3.6-flash", config=manual_config)
-    response = chat.send_message(user_request)
-
-    print("Full response object:")
-    print(response.candidates[0].content.parts)
-
-
-def run_agent(user_request: str):
-    chat = client.chats.create(model="gemini-3.6-flash", config=config)
-    response = chat.send_message(user_request)
-    print(response.text)
 
 def run_agent_manual(chat, user_request: str):
-    
-    
+    """
+    Sends a user request to Gemini and manually handles the full agent loop:
+      1. Send the request + available tools to Gemini
+      2. Check whether Gemini wants to call a tool or just reply with text
+      3. If a tool call is requested, execute the real Python function
+      4. Send the result back to Gemini and print its final natural-language reply
+    """
     response = chat.send_message(user_request)
-
     part = response.candidates[0].content.parts[0]
+
+    # Case 1: Gemini just wants to reply with text, no tool needed
+    if part.function_call is None:
+        print(f"Agent: {response.text}")
+        return
+
+    # Case 2: Gemini wants to call a tool
     function_call = part.function_call
+    print(f"  [calling tool: {function_call.name}({function_call.args})]")
 
-    print(f"Gemini wannts to call: {function_call.name}")
-    print(f"with arguments: {function_call.args}")
-
-    available_functions = {
-        "create_reminder": create_reminder,
-        "list_reminders": list_reminders,
-        "read_file": read_file,
-    }
     function_to_call = available_functions[function_call.name]
     result = function_to_call(**function_call.args)
 
-    print(f"Execution result: {result}")
     function_response_part = types.Part.from_function_response(
         name=function_call.name,
         response={"result": result},
     )
-
     final_response = chat.send_message(function_response_part)
-    print(f"Final reply: {final_response.text}")
-    
+    print(f"Agent: {final_response.text}")
 
 
-if __name__ == "__main__":
-    manual_config = types.GenerateContentConfig(
-            tools=tools,
-            automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
-        )
-    chat = client.chats.create(model='gemini-3.6-flash',config = manual_config)
+def main():
+    config = types.GenerateContentConfig(
+        tools=tools,
+        automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
+        system_instruction=(
+            "You are a personal task assistant. Use the available tools to help "
+            "the user manage reminders and read files. Be concise in your replies."
+        ),
+    )
+    chat = client.chats.create(model="gemini-3.6-flash", config=config)
+
     print("Task Agent ready. Type 'quit' to exit.\n")
     while True:
         user_input = input("You: ")
@@ -76,3 +67,7 @@ if __name__ == "__main__":
             break
         run_agent_manual(chat, user_input)
         print()
+
+
+if __name__ == "__main__":
+    main()
