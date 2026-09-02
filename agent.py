@@ -32,12 +32,9 @@ def run_agent(user_request: str):
     response = chat.send_message(user_request)
     print(response.text)
 
-def run_agent_manual(user_request: str):
-    manual_config = types.GenerateContentConfig(
-        tools=tools,
-        automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
-    )
-    chat = client.chats.create(model='gemini-3.6-flash',config = manual_config)
+def run_agent_manual(chat, user_request: str):
+    
+    
     response = chat.send_message(user_request)
 
     part = response.candidates[0].content.parts[0]
@@ -66,11 +63,16 @@ def run_agent_manual(user_request: str):
 
 
 if __name__ == "__main__":
+    manual_config = types.GenerateContentConfig(
+            tools=tools,
+            automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
+        )
+    chat = client.chats.create(model='gemini-3.6-flash',config = manual_config)
     print("Task Agent ready. Type 'quit' to exit.\n")
     while True:
         user_input = input("You: ")
         if user_input.lower() in ("quit", "exit"):
             print("Goodbye!")
             break
-        run_agent_manual(user_input)
+        run_agent_manual(chat, user_input)
         print()
