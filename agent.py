@@ -66,4 +66,11 @@ def run_agent_manual(user_request: str):
 
 
 if __name__ == "__main__":
-    run_agent_manual("What does my notes.txt file say?")
+    print("Task Agent ready. Type 'quit' to exit.\n")
+    while True:
+        user_input = input("You: ")
+        if user_input.lower() in ("quit", "exit"):
+            print("Goodbye!")
+            break
+        run_agent_manual(user_input)
+        print()
