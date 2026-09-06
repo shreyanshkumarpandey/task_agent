@@ -30,13 +30,10 @@ def run_agent_manual(chat, user_request: str):
 
     # Case 1: Gemini just wants to reply with text, no tool needed
     if part.function_call is None:
-        print(f"Agent: {response.text}")
-        return
+        return response.text
 
     # Case 2: Gemini wants to call a tool
     function_call = part.function_call
-    print(f"  [calling tool: {function_call.name}({function_call.args})]")
-
     function_to_call = available_functions[function_call.name]
     result = function_to_call(**function_call.args)
 
@@ -45,7 +42,7 @@ def run_agent_manual(chat, user_request: str):
         response={"result": result},
     )
     final_response = chat.send_message(function_response_part)
-    print(f"Agent: {final_response.text}")
+    return final_response.text
 
 
 def main():
